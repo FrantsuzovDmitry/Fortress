@@ -26,6 +26,7 @@ public class GameplayUIController : MonoBehaviour
         {
             TurnManager.instance.EndTurn();
         });
+
         getCardButton.onClick.AddListener(() =>
         {
             CardManager.instance.GiveCardToPlayer(TurnManager.instance.currentPlayerTurn);

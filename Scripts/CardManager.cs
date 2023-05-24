@@ -18,10 +18,14 @@ public class CardManager : MonoBehaviour
             player3Cards = new List<CardController>(),
             player4Cards = new List<CardController>();
     public List<List<CardController>> playersCards = new List<List<CardController>>();
+    public List<Character> groupOfCharacters = new List<Character>();
 
     public int numberOfSandglasses;
 
     private const int NotAPlayerID = 100;
+
+    public delegate void OnFortAdded(Card card);
+    public OnFortAdded onFortAdded;
 
     //Initialization
     private void Awake()
@@ -75,24 +79,24 @@ public class CardManager : MonoBehaviour
         deck.Add(new Sandglass(Resources.Load<Sprite>("Sprites/10")));
         deck.Add(new Sandglass(Resources.Load<Sprite>("Sprites/10")));
         deck.Add(new Sandglass(Resources.Load<Sprite>("Sprites/10")));
-        deck.Add(new Fort(1, Resources.Load<Sprite>("Sprites/2")));
-        deck.Add(new Character(1, 1, 1, Resources.Load<Sprite>("Sprites/4")));
-        deck.Add(new Character(2, 1, 1, Resources.Load<Sprite>("Sprites/5")));
-        deck.Add(new Character(1, 1, 1, Resources.Load<Sprite>("Sprites/6")));
-        deck.Add(new Fort(1, Resources.Load<Sprite>("Sprites/2")));
+        deck.Add(new Fortress(3, Resources.Load<Sprite>("Sprites/2")));
+        deck.Add(new Character(2, 1, 1, Resources.Load<Sprite>("Sprites/4")));
+        deck.Add(new Character(1, 1, 1, Resources.Load<Sprite>("Sprites/5")));
+        deck.Add(new Character(2, 1, 1, Resources.Load<Sprite>("Sprites/6")));
         deck.Add(new Character(3, 1, 1, Resources.Load<Sprite>("Sprites/9")));
         deck.Add(new Character(3, 1, 1, Resources.Load<Sprite>("Sprites/9")));
         deck.Add(new Character(3, 1, 1, Resources.Load<Sprite>("Sprites/9")));
         deck.Add(new Character(3, 1, 1, Resources.Load<Sprite>("Sprites/9")));
         deck.Add(new Character(3, 1, 1, Resources.Load<Sprite>("Sprites/9")));
         deck.Add(new Character(3, 1, 1, Resources.Load<Sprite>("Sprites/9")));
+        deck.Add(new Fortress(1, Resources.Load<Sprite>("Sprites/2")));
     }
 
     public void GiveCardToPlayer(int playerID)
     {
-        var card = deck[deck.Count - 1];
+        Card card = deck[deck.Count - 1];
         CardController newCard;
-        if (card is Sandglass || card is Fort)
+        if (card is Sandglass || card is Fortress)
         {
             newCard = Instantiate(cardControllerPrefab, playArea);
             newCard.transform.localPosition = Vector3.zero;
@@ -100,6 +104,8 @@ public class CardManager : MonoBehaviour
 
             if (card is Sandglass)
                 IncreaseNumberOfSandglasses();
+            if (card is Fortress)
+                FortressManager.instance.AddFort(card);
         }
         else
         {
@@ -107,8 +113,8 @@ public class CardManager : MonoBehaviour
             newCard.transform.localPosition = Vector3.zero;
             newCard.Initialize(card, playerID);
 
-            playersCards[playerID].Add(newCard);
-            player1Cards.Add(newCard);
+            playersCards[playerID].Add(newCard);        // Action
+            player1Cards.Add(newCard);                  // Same action (but concrete)
         }
 
         // Delete last card
@@ -138,5 +144,89 @@ public class CardManager : MonoBehaviour
             PlayerManager.instance.EndGame();
         }
     }
-}
 
+    public void AddCharacterToGroup(Character character)
+    {
+        groupOfCharacters.Add(character);
+    }
+
+    public void RemoveCharacterFromGroup(Character character)
+    {
+        groupOfCharacters.Remove(character);
+    }
+
+    public void StopCreatingOfGroup()
+    {
+        groupOfCharacters.Clear();
+    }
+
+    public void RemoveAttackersFromHand()
+    {
+        int i = 0;
+        while (i < player1Cards.Count)
+        {
+            var card = player1Cards[i];
+            // if card was in the attackers group then card will be removed
+            if (((Character)card.card).isInGroup)
+            {
+                Destroy(player1Cards[i].gameObject);
+                player1Cards.Remove(card);
+            }
+            else
+            {
+                i++;
+            }
+        }
+    }
+
+    public void HideOpponentsCards()
+    {
+        if (TurnManager.instance.currentPlayerTurn == 0)
+        {
+            foreach (CardController card in player2Cards)
+            {
+                card.cardBack.gameObject.SetActive(true);
+            }
+        }
+        else
+        {
+            foreach (CardController card in player1Cards)
+            {
+                card.cardBack.gameObject.SetActive(true);
+            }
+        }
+    }
+
+    public void ShowMyCards()
+    {
+        if (TurnManager.instance.currentPlayerTurn == 1)
+        {
+            foreach (CardController card in player2Cards)
+            {
+                card.cardBack.gameObject.SetActive(false);
+            }
+        }
+        else
+        {
+            foreach (CardController card in player1Cards)
+            {
+                card.cardBack.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    public void AttackToFortress(int attackerID, Fortress defendingFort)
+    {
+        FortressManager.instance.AttackToFortress(attackerID, defendingFort, groupOfCharacters);
+    }
+
+    private void OnEnable()
+    {
+        TurnManager.instance.onAttackStopped += StopCreatingOfGroup;
+    }
+
+    private void OnDisable()
+    {
+        
+    }
+}

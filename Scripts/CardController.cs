@@ -6,34 +6,40 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.EventSystems;
 
-public class CardController : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler, IDragHandler
+public class CardController : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
 {
     public Card card;
-    public Image illustration, image;
+    public Image illustration, image, cardBack;
     public TextMeshProUGUI cardName;
 
     public Transform originalParent;    //Make private
 
     private void Awake()
     {
-        image = GetComponent<Image>();
+        //image = GetComponent<Image>();
     }
 
     public void Initialize(Card card, int ownerID)
     {
-        this.card = new Card(card)
-        {
-            ownerID = ownerID
-        };
+        //if (card is Character)
+        //    this.card = new Character((Character)card);
+        //else if (card is Fortress)
+        //    this.card = new Fortress((Fortress)card);
+        //else
+        //    this.card = new Card(card);
+        this.card = card;
+        this.card.ownerID = card.ownerID;
         illustration.sprite = card.illustration;
         cardName.text = card.cardName;
+
+        cardBack.gameObject.SetActive(false);
 
         originalParent = transform.parent;
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        //Debug.Log("Entered");
+        
     }
 
     public void OnPointerExit(PointerEventData eventData)
@@ -43,6 +49,7 @@ public class CardController : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        /*
         if (originalParent.name != $"Player{card.ownerID+1}Hand")
             //TurnManager.instance.currentPlayerTurn != card.ownerID)
         {
@@ -54,25 +61,51 @@ public class CardController : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             transform.SetParent(transform.root);
             image.raycastTarget = false;
         }
+        */
+
+        // If fortress to attack is selected
+        if (TurnManager.instance.isProcessOfCreatingGroup)
+        {
+            // Player try to take his card
+            if (originalParent.name ==
+                $"Player{TurnManager.instance.currentPlayerTurn + 1}Hand")
+            {
+                var temp = (Character)card;
+                if (temp.isInGroup)
+                {
+                    CardManager.instance.RemoveCharacterFromGroup(temp);
+                    temp.isInGroup = false;
+                }
+                else
+                {
+                    CardManager.instance.AddCharacterToGroup(temp);
+                    temp.isInGroup = true;
+                }
+            }
+            // The card is not his
+            else
+            {
+                CardManager.instance.AttackToFortress(TurnManager.instance.currentPlayerTurn, (Fortress)card);
+                //TurnManager.instance.StopCreatingOfGroup();
+            }
+        }
+        // If it's a Fort (OR SANDGLASSES)
+        else if (originalParent.name == "PlayArea")
+        {
+            TurnManager.instance.CreatingOfGroupOfCharacters();
+        }
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
         //Debug.Log(eventData.pointerEnter);
-        image.raycastTarget = true;
-        ReturnRoHand();
+        //image.raycastTarget = true;
+        //ReturnRoHand();
     }
 
     private void ReturnRoHand()
     {
-        transform.SetParent(originalParent);
-        transform.localPosition = Vector3.zero;
-    }
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        //transform.position = eventData.position;
-        if (transform.parent == originalParent) return;
-        transform.localPosition += new Vector3(eventData.delta.x, eventData.delta.y, 0);
+        //transform.SetParent(originalParent);
+        //transform.localPosition = Vector3.zero;
     }
 }

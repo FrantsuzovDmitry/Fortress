@@ -8,6 +8,11 @@ public class PlayerManager : MonoBehaviour
     public static PlayerManager instance;
     public List<Player> players = new List<Player>();
 
+    private void Awake()
+    {
+        instance = this;
+    }
+
     internal void AssignTurn(int currentPlayerTurn)
     {
         foreach (Player player in players)
@@ -41,10 +46,5 @@ public class PlayerManager : MonoBehaviour
     {
         // Implement the function of define winner later
         return players[0];
-    }
-
-    private void Awake()
-    {
-        instance = this;
     }
 }

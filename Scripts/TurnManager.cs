@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,9 +9,14 @@ public class TurnManager : MonoBehaviour
     public static TurnManager instance;
     public int currentPlayerTurn;
 
+    public bool isProcessOfCreatingGroup;
+
+    public Action onAttackStopped;
+
     private void Awake()
     {
         instance = this;
+        isProcessOfCreatingGroup = false;
     }
 
     private void Start()
@@ -28,6 +34,8 @@ public class TurnManager : MonoBehaviour
     {
         GameplayUIController.instance.UpdateCurrentPlayerTurn(currentPlayerTurn);
         PlayerManager.instance.AssignTurn(currentPlayerTurn);
+        CardManager.instance.ShowMyCards();
+        CardManager.instance.HideOpponentsCards();
     }
 
     public void EndTurn()
@@ -41,8 +49,30 @@ public class TurnManager : MonoBehaviour
         else
         {
             // Next player turn;
-            currentPlayerTurn = currentPlayerTurn + 1;
+            currentPlayerTurn++;
         }
         StartTurn();
+    }
+
+    public void CreatingOfGroupOfCharacters()
+    {
+        Debug.Log("Start creating");
+        isProcessOfCreatingGroup = true;
+    }
+
+    public void StopCreatingOfGroup()
+    {
+        Debug.Log("Stop creating");
+        isProcessOfCreatingGroup = false;
+    }
+
+    private void OnEnable()
+    {
+        onAttackStopped += StopCreatingOfGroup;
+    }
+
+    private void OnDisable()
+    {
+        onAttackStopped -= StopCreatingOfGroup;
     }
 }
